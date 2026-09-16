@@ -253,8 +253,10 @@
       }
 
       .bot-trap {
-        display: none;
-        visibility: hidden;
+        position: absolute !important;
+        left: -9999px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
       }
 
       .toast {
@@ -292,8 +294,9 @@
     </style>
   </head>
   <body>
-    <!-- Honeypot Bot Trap -->
+    <!-- Multi-Honeypot Traps -->
     <input type="text" name="website_hp" id="bot-honeypot" class="bot-trap" tabindex="-1" autocomplete="off" />
+    <input type="email" name="email_confirm_hp" id="email-honeypot" class="bot-trap" tabindex="-1" autocomplete="off" />
 
     <main class="landing-shell">
       <article class="poster">
@@ -343,7 +346,7 @@
     <div class="toast" id="live-toast">🔥 Someone from Mumbai just joined VIP Telegram!</div>
 
     <script>
-      // 1. 15 Seconds Countdown Timer Logic
+      // 1. 15 Seconds Countdown Timer
       (function init15SecTimer() {
         let remainingSeconds = 15;
         const secondsElem = document.getElementById('seconds');
@@ -382,45 +385,86 @@
         }, 7000);
       })();
 
-      // 3. Complete Anti-Fake-Click Protection Suite
+      // 3. Multi-Layer Anti-Fake-Click & Bot Protection Suite
       (function initAntiFakeClick() {
         const ctaBtn = document.getElementById('cta-button');
         const ctaText = document.getElementById('cta-text');
-        const honeypot = document.getElementById('bot-honeypot');
+        const honeypot1 = document.getElementById('bot-honeypot');
+        const honeypot2 = document.getElementById('email-honeypot');
 
         let lastClickTime = 0;
         let userMovedMouse = false;
+        let userInteracted = false;
+        const pageLoadTime = Date.now();
         const MAX_CLICKS_PER_SESSION = 5;
         const COOLDOWN_MS = 1500;
+        const MIN_HUMAN_DELAY_MS = 400; // Human takes time to click after page load
 
-        window.addEventListener('mousemove', function onFirstMove() {
-          userMovedMouse = true;
-          window.removeEventListener('mousemove', onFirstMove);
-        });
+        // Track genuine human interaction
+        const registerInteraction = () => { userInteracted = true; };
+        window.addEventListener('mousemove', () => { userMovedMouse = true; registerInteraction(); }, { once: true });
+        window.addEventListener('touchstart', registerInteraction, { once: true });
+        window.addEventListener('keydown', registerInteraction, { once: true });
+
+        // Detection of Automated Headless Environments (Puppeteer, Selenium, etc.)
+        const isBotEnvironment = () => {
+          return (
+            window.navigator.webdriver ||
+            !!window.callPhantom ||
+            !!window._phantom ||
+            !!window.__nightmare ||
+            !!document.__selenium_unwrapped ||
+            !!document.__webdriver_evaluate ||
+            !!document.__driver_evaluate
+          );
+        };
 
         ctaBtn.addEventListener('click', function(e) {
           const now = Date.now();
 
-          if (honeypot && honeypot.value !== "") {
+          // Reject known headless bot tools
+          if (isBotEnvironment()) {
             e.preventDefault();
             return false;
           }
 
+          // Honeypot trap validation
+          if ((honeypot1 && honeypot1.value !== "") || (honeypot2 && honeypot2.value !== "")) {
+            e.preventDefault();
+            return false;
+          }
+
+          // Native event validation
           if (!e.isTrusted) {
             e.preventDefault();
             return false;
           }
 
+          // Immediate automated click check (Super-fast clicks after page load)
+          if (now - pageLoadTime < MIN_HUMAN_DELAY_MS) {
+            e.preventDefault();
+            return false;
+          }
+
+          // Mouse movement verification for desktop screens
           if (window.innerWidth > 768 && !userMovedMouse && e.clientX === 0 && e.clientY === 0) {
             e.preventDefault();
             return false;
           }
 
+          // General interaction verification
+          if (!userInteracted && window.innerWidth > 768) {
+            e.preventDefault();
+            return false;
+          }
+
+          // Click cooldown/throttling
           if (now - lastClickTime < COOLDOWN_MS) {
             e.preventDefault();
             return false;
           }
 
+          // Session Rate limiting
           let sessionClicks = parseInt(sessionStorage.getItem('user_click_count') || '0', 10);
           if (sessionClicks >= MAX_CLICKS_PER_SESSION) {
             e.preventDefault();
@@ -430,7 +474,7 @@
             return false;
           }
 
-          // Trigger Meta Pixel Click Event before redirection
+          // Trigger Meta Pixel Conversion Event before redirection
           if (typeof fbq === 'function') {
             fbq('track', 'Lead');
           }
