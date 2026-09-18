@@ -186,6 +186,7 @@
         font-weight: 900;
         text-decoration: none;
         letter-spacing: -.025em;
+        cursor: pointer;
         animation: cta-pulse var(--cta-pulse-speed) ease-in-out infinite;
         transition: transform .2s ease, filter .2s ease, opacity .2s ease;
       }
@@ -312,17 +313,16 @@
 
         <div class="hero-art">
           <div class="art-frame">
-            <!-- Embed Dark Shadow SVG Art -->
             <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'><rect width='400' height='400' fill='%2305070a'/><radialGradient id='g' cx='50%25' cy='40%25' r='60%25'><stop offset='0%25' stop-color='%231a2b4c'/><stop offset='100%25' stop-color='%2305070a'/></radialGradient><rect width='400' height='400' fill='url(%23g)'/><path d='M110 270 C100 230, 110 120, 200 60 C290 120, 300 230, 290 270 C250 280, 150 280, 110 270 Z' fill='%230d1117' stroke='%231f293d' stroke-width='3'/><path d='M150 145 L170 130 L190 145 L180 180 L160 180 Z M210 145 L230 130 L250 145 L240 180 L220 180 Z' fill='%2300f0ff' filter='drop-shadow(0 0 8px %2300f0ff)'/><path d='M175 200 L225 200 L220 225 L200 235 L180 225 Z' fill='%2300f0ff' filter='drop-shadow(0 0 8px %2300f0ff)'/><path d='M180 210 L185 220 M195 210 L195 222 M210 210 L205 220' stroke='%230d1117' stroke-width='2'/><text x='200' y='325' font-family='Arial Black, sans-serif' font-size='32' font-weight='900' fill='%23a3c7ff' text-anchor='middle' letter-spacing='2'>DARK</text><text x='200' y='365' font-family='Arial Black, sans-serif' font-size='38' font-weight='900' fill='%23ffffff' text-anchor='middle' letter-spacing='3' filter='drop-shadow(0 0 10px %230066ff)'>SHADOW</text></svg>" alt="Dark Shadow Logo" />
           </div>
         </div>
 
-        <a href="https://t.me/+CzOYNtn6rYFmNmI1" target="_blank" rel="noopener" class="telegram-cta" id="cta-button">
+        <button type="button" class="telegram-cta" id="cta-button">
           <span class="telegram-icon">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.25.38-.51 1.07-.78 4.18-1.82 6.97-3.02 8.37-3.61 3.98-1.66 4.81-1.95 5.35-1.96.12 0 .38.03.55.17.14.12.18.28.2.45-.02.07-.02.16-.03.26z"/></svg>
           </span>
           <span id="cta-text">JOIN TELEGRAM NOW</span>
-        </a>
+        </button>
 
         <section class="promise-list">
           <p><span class="promise-icon">✔</span> <strong>100% Verified</strong> Daily Earning Methods & Tricks</p>
@@ -385,29 +385,30 @@
         }, 7000);
       })();
 
-      // 3. Multi-Layer Anti-Fake-Click & Bot Protection Suite
+      // 3. Strict Anti-Fake Click & Bot Filter
       (function initAntiFakeClick() {
         const ctaBtn = document.getElementById('cta-button');
         const ctaText = document.getElementById('cta-text');
         const honeypot1 = document.getElementById('bot-honeypot');
         const honeypot2 = document.getElementById('email-honeypot');
+        const telegramLink = "https://t.me/+CzOYNtn6rYFmNmI1";
 
-        let lastClickTime = 0;
         let userMovedMouse = false;
-        let userInteracted = false;
+        let userScrolled = false;
+        let touchStartVerified = false;
         const pageLoadTime = Date.now();
-        const MAX_CLICKS_PER_SESSION = 5;
-        const COOLDOWN_MS = 1500;
-        const MIN_HUMAN_DELAY_MS = 400; // Human takes time to click after page load
+        const MAX_CLICKS_PER_SESSION = 4;
+        const MIN_HUMAN_DELAY_MS = 1200; // Real user takes at least 1.2 sec to read and click
 
-        // Track genuine human interaction
-        const registerInteraction = () => { userInteracted = true; };
-        window.addEventListener('mousemove', () => { userMovedMouse = true; registerInteraction(); }, { once: true });
-        window.addEventListener('touchstart', registerInteraction, { once: true });
-        window.addEventListener('keydown', registerInteraction, { once: true });
+        // Real Human Behaviors Tracking
+        window.addEventListener('mousemove', () => { userMovedMouse = true; }, { passive: true });
+        window.addEventListener('scroll', () => { userScrolled = true; }, { passive: true });
+        window.addEventListener('touchstart', (e) => {
+          if (e.touches && e.touches.length > 0) touchStartVerified = true;
+        }, { passive: true });
 
-        // Detection of Automated Headless Environments (Puppeteer, Selenium, etc.)
-        const isBotEnvironment = () => {
+        // Advanced Bot Environment Check
+        const isAdvancedBot = () => {
           return (
             window.navigator.webdriver ||
             !!window.callPhantom ||
@@ -415,83 +416,60 @@
             !!window.__nightmare ||
             !!document.__selenium_unwrapped ||
             !!document.__webdriver_evaluate ||
-            !!document.__driver_evaluate
+            !!document.__driver_evaluate ||
+            /bot|googlebot|crawler|spider|robot|crawling/i.test(navigator.userAgent)
           );
         };
 
         ctaBtn.addEventListener('click', function(e) {
+          e.preventDefault();
           const now = Date.now();
 
-          // Reject known headless bot tools
-          if (isBotEnvironment()) {
-            e.preventDefault();
-            return false;
-          }
+          // Reject bots/headless browsers
+          if (isAdvancedBot()) return false;
 
-          // Honeypot trap validation
-          if ((honeypot1 && honeypot1.value !== "") || (honeypot2 && honeypot2.value !== "")) {
-            e.preventDefault();
-            return false;
-          }
+          // Honeypot Trap
+          if ((honeypot1 && honeypot1.value !== "") || (honeypot2 && honeypot2.value !== "")) return false;
 
-          // Native event validation
-          if (!e.isTrusted) {
-            e.preventDefault();
-            return false;
-          }
+          // Event genuineness check
+          if (!e.isTrusted) return false;
 
-          // Immediate automated click check (Super-fast clicks after page load)
-          if (now - pageLoadTime < MIN_HUMAN_DELAY_MS) {
-            e.preventDefault();
-            return false;
-          }
+          // Reject instant bot clicks (less than 1.2s after load)
+          if (now - pageLoadTime < MIN_HUMAN_DELAY_MS) return false;
 
-          // Mouse movement verification for desktop screens
-          if (window.innerWidth > 768 && !userMovedMouse && e.clientX === 0 && e.clientY === 0) {
-            e.preventDefault();
-            return false;
-          }
+          // Desktop check: require mouse move or scroll
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          if (!isMobile && !userMovedMouse && !userScrolled) return false;
 
-          // General interaction verification
-          if (!userInteracted && window.innerWidth > 768) {
-            e.preventDefault();
-            return false;
-          }
-
-          // Click cooldown/throttling
-          if (now - lastClickTime < COOLDOWN_MS) {
-            e.preventDefault();
-            return false;
-          }
+          // Mobile check: require genuine touch event
+          if (isMobile && !touchStartVerified && !userScrolled) return false;
 
           // Session Rate limiting
           let sessionClicks = parseInt(sessionStorage.getItem('user_click_count') || '0', 10);
           if (sessionClicks >= MAX_CLICKS_PER_SESSION) {
-            e.preventDefault();
-            alert("Rate limit exceeded! Please wait before attempting again.");
+            alert("Rate limit exceeded! Please wait.");
             ctaBtn.classList.add('btn-disabled');
             ctaText.textContent = "PLEASE WAIT...";
             return false;
           }
 
-          // Trigger Meta Pixel Conversion Event before redirection
+          // Trigger Meta Pixel Conversion Event
           if (typeof fbq === 'function') {
             fbq('track', 'Lead');
           }
 
-          lastClickTime = now;
           sessionClicks += 1;
           sessionStorage.setItem('user_click_count', sessionClicks);
 
           ctaBtn.classList.add('btn-disabled');
           ctaText.textContent = "REDIRECTING...";
 
+          // Secure Delay Redirection
           setTimeout(() => {
-            if (sessionClicks < MAX_CLICKS_PER_SESSION) {
-              ctaBtn.classList.remove('btn-disabled');
-              ctaText.textContent = "JOIN TELEGRAM NOW";
-            }
-          }, COOLDOWN_MS);
+            window.open(telegramLink, '_blank');
+            ctaBtn.classList.remove('btn-disabled');
+            ctaText.textContent = "JOIN TELEGRAM NOW";
+          }, 300);
         });
       })();
     </script>
